@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IV Assist — Oral Examination Agent</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #fafaf8;
+      --surface: #f2f1ed;
+      --border: #e2e1dc;
+      --border-strong: #c8c7c0;
+      --text: #1a1a18;
+      --text-muted: #6b6b65;
+      --text-dim: #a0a09a;
+      --accent: #2d5be3;
+      --accent-light: #e8edfb;
+      --serif: Georgia, 'Times New Roman', serif;
+      --mono: 'SF Mono', 'Fira Mono', 'Cascadia Code', monospace;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #121210;
+        --surface: #1c1c1a;
+        --border: #2e2e2a;
+        --border-strong: #444440;
+        --text: #e8e8e2;
+        --text-muted: #9a9a92;
+        --text-dim: #5a5a55;
+        --accent: #7b9ef5;
+        --accent-light: #1a2040;
+      }
+    }
+
+    body {
+      font-family: var(--serif);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 740px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .header-meta {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 6px;
+    }
+
+    .header-title {
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--text);
+      margin-bottom: 3px;
+    }
+
+    .header-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .questions-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-style: italic;
+      margin-bottom: 10px;
+    }
+
+    .question-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 1.5rem;
+    }
+
+    .question-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.15s;
+      font-family: var(--serif);
+    }
+
+    .question-btn:hover { border-color: var(--border-strong); }
+
+    .q-num {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-dim);
+      min-width: 20px;
+    }
+
+    .q-text {
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .messages {
+      flex: 1;
+      margin-bottom: 1.25rem;
+    }
+
+    .message {
+      margin-bottom: 1.5rem;
+    }
+
+    .msg-role {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .msg-role.examiner { color: var(--accent); }
+    .msg-role.agent { color: var(--text-dim); }
+
+    .msg-content {
+      font-size: 14.5px;
+      line-height: 1.8;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+
+    .msg-content.agent-content {
+      border-left: 1.5px solid var(--border);
+      padding-left: 14px;
+    }
+
+    .thinking {
+      font-style: italic;
+      color: var(--text-dim);
+      font-size: 13px;
+    }
+
+    .input-area {
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    textarea {
+      flex: 1;
+      resize: none;
+      font-family: var(--serif);
+      font-size: 13.5px;
+      padding: 9px 11px;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    textarea:focus { border-color: var(--accent); }
+
+    .send-btn {
+      padding: 9px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 12px;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    .send-btn:hover:not(:disabled) { background: var(--surface); }
+    .send-btn:disabled { color: var(--text-dim); cursor: not-allowed; }
+
+    .controls {
+      margin-top: 8px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .ctrl-btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .ctrl-btn:hover { color: var(--text-muted); }
+
+    .dot { color: var(--border-strong); font-size: 11px; }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="header-meta">Oral Examination · HSG MBI 2026</div>
+    <div class="header-title">IV Assist — Examination Agent</div>
+    <div class="header-sub">Pascal Sander · Dr. Mahei Li &amp; Dr. Eva Ritz</div>
+  </header>
+
+  <div id="questions-section">
+    <div class="questions-label">Select an official exam question, or type your own:</div>
+    <div class="question-list" id="question-list"></div>
+  </div>
+
+  <div class="messages" id="messages"></div>
+
+  <div class="input-area">
+    <textarea id="input" rows="2" placeholder="Ask a question or follow-up... (Enter to send)"></textarea>
+    <button class="send-btn" id="send-btn" onclick="sendMessage()">Send ↗</button>
+  </div>
+
+  <div class="controls" id="controls" style="display:none">
+    <button class="ctrl-btn" onclick="toggleQuestions()">show questions</button>
+    <span class="dot">·</span>
+    <button class="ctrl-btn" onclick="resetChat()">reset</button>
+  </div>
+</div>
+
+<script>
+const SYNOPSIS = `
+AUTHOR: Pascal Sander, MBI Program, University of St. Gallen, Student ID 21-617-642
+
+MANAGEMENT SUMMARY:
+Synopsis documents Pascal's learning journey through "Agentic AI Design, Governance & Management" at HSG. Group designed and built IV Assist, a multi-agent AI system helping parents of disabled children navigate Swiss Invalidity Insurance (IV) administrative burden. Built on IBM watsonX Orchestrate, developed using Claude Code without prior coding background. Pascal took on most backend integration work and coordinating role. Synopsis does not present a success story — documents where concept exceeded what could be built, where governance lagged technical capability.
+
+INTRODUCTION:
+First MBI course at HSG. Pascal completed bachelor at HSG, runs side projects in personal branding and sales, works with AI tools daily. Course: problem-based learning, each lecture applied directly to running group project. Came in without formal AI development background, left having built backend of functioning multi-agent system.
+
+CHALLENGE:
+Uli, a man in his fifties, severely disabled son. Manages all IV administrative work: monitoring regulatory changes, filing multiple forms per quarter, coordinating reimbursements, staying audit-ready while caring for son and working full time. Interview: Uli almost in tears, not from frustration but gratitude. Also interviewed Tatjana and Dani. Tatjana missed Helplessness Allowance for years — found out through chance conversation with Dani while walking dogs. Critical IV information spreading through dog-walking networks because official system has no proactive communication. Brief: design agentic AI reducing administrative burden to near zero, keeping full human control and auditability.
+
+IDEA CONCEPT:
+Core: IV-Care Agent, multi-agent AI handling full administrative cycle in background, surfacing only when human decision needed. Five specialized agents: Legal & Entitlement (monitor regulations), Coordination (schedules/transport), Invoice & Reconciliation, Compliance & Audit, Care Reporting. Retrospective: ambition well-calibrated, but massively underestimated implementation complexity. IV forms cannot be filled programmatically through official portals. Regulatory monitoring across 26 cantons not a solved API problem.
+
+USER RESEARCH:
+In-depth interviews with Uli, Tatjana, Dani. Shared research document for all course teams. Confirmed: problem is structural not individual. IV system provides no proactive guidance, relies entirely on parents finding information themselves. Limitation: small sample, three parents, two cantons — not statistically representative.
+
+COMPETITIVE ANALYSIS:
+No formal competitive analysis produced — worth stating directly. No direct competitor: current state IS the competition. Parents use Excel, handwritten notes, WhatsApp, phone calls, mail. SVA portals functional but entirely passive. Dani praised Aargau SVA portal as "easy to use" — still cost him 6-8 hours/month. Environmental constraints: no API access to IV portals, legal/linguistic complexity across 26 cantons, Swiss data protection law. Ended up covering only some documents from one canton.
+
+FUTURE SCENARIOS:
+Group applied scenario planning to PwC tax advisory. Pascal NOT primary contributor — colleague led this, Pascal focused on prototype. Key reframing: both scenarios reached same conclusion — professional role shifts from doing to directing. Maps to IV Assist: agent does documentation, parent directs and approves.
+
+PERSONAS:
+Claudia Meier ("Strategic System Navigator"): worried about future eligibility uncertainty, needs foresight and strategic clarity. Markus Schneider ("Overloaded Compliance Parent"): 6-12 hours/month on administration, needs time savings and audit safety.
+
+SERVICE BLUEPRINT:
+As-is: legislation changes → IV database updates → parent expected to find out on their own → misses changes → loses benefits. To-be: agent monitors continuously, flags changes on next login, retains persistent context, guides form completion. Was the ONE artifact team came back to most in meetings.
+
+BPMN:
+Mapped process across two lanes: AI agent and human in the loop. Deliberate error injection every N forms counters automation bias — forces verification rather than rubber-stamping. Escalation path to Pro Infirmis. Created once, helped structure initial workflow, then largely moved on. Less useful as living reference than service blueprint.
+
+AGENT CANVAS:
+Explicit approval gate: no form submitted without parent's active confirmation. Core safety mechanism. Wrong field on IV form can delay support for months. Pascal's contribution: primarily conceptual, participated in design sessions, helped think through edge cases. Did not produce final slides.
+
+PROTOTYPE:
+Built on IBM watsonX Orchestrate, custom interface with Claude Code and Lovable (Pascal focused on functionality not interface). Agents: Orchestrator (intent/routing), Form Assistant (classifies IV forms, extracts fields), Data Agent (retrieves user data from Airtable), Judge Agent (scores outputs on correctness/completeness/clarity/relevance), IV Assist (legal research via Tavily API). Original plan FAILED: fill official IV forms via portals — no API access, browser automation beyond capacity. Solution: AI-generated PDFs for download/print/manual submission. Pascal did most backend work using Claude Code, no formal coding background, hadn't taken BI1/BI2 yet. THE PDF MOMENT: ~3 hours debugging, Watson Orchestrate timeout errors, ran out of token quota, found small GitHub repo bug (file not updated after earlier change), fixed it, dry test worked, real data worked. Clearest feeling of competence in entire semester.
+
+DESIGN PROCESS REFLECTION:
+Four phases: enthusiasm → confusion → pragmatic reduction → learning. IV portals: no API. Form structures vary by canton. Legal texts require interpretation. Chose smaller-but-working over ambitious-but-barely-functioning. Coordinating role emerged: Pascal and Laura proposed work division, pushed milestones. Exchange students unfamiliar with HSG project rhythm — improved with clear assignments and regular calls. Mr. Schulte's guest lecture: 260 configurations/9 models showed adding more agents doesn't reliably improve performance. Single well-configured agent can outperform coordinated team. Eva Ritz helped distinguish realistic vs. interesting to design — also helped fix bugs. LLM-as-a-Judge: directionally correct but noisy, more debugging than planned. Not a complete failure, output better than without it, but not a success. Self-regulated learning: prototype pulled Pascal in intrinsically — studied watsonX because something was broken, not because it was on syllabus.
+
+AGENTIC AI REFLECTION:
+Technical capability ahead of governance thinking. For Uli: hours/month returned to caregiving rather than administration. Organizational: IV system assumes parents will miss/misfile/underclaim — built into cost structure. Working agent ensuring correct claims = good for families, disruptive for system's budget. Liability unresolved: if IV Assist produces incorrectly filled form and family loses benefits — who's responsible? No clear legal answer. Design response: human in every loop, links to official sources, framed as proof of concept. Anthropic misalignment research: agents in simulated environments leaked data or took coercive actions when conflicted with goals — reinforces why approval gate was primary safety mechanism. Data privacy most unresolved: children's medical records, disability classifications, family financial situations. Generational concern: concerned about students learning to prompt before learning to think. Already uses AI agents in own work: HubSpot+Claude+Linear+SocialPilot+Google Calendar, AI transcriber, LinkedIn scraping.
+
+CONCLUSION:
+Prototype not finished. Form generation works for 3 forms, regulatory monitoring works, Judge Agent validates outputs (more or less), memory system reduces data entry. Did NOT achieve: portal integration, multi-canton coverage, full five-agent architecture. Concept sound — system between IV bureaucracy and parent is technically feasible today. Barriers: legal, institutional, social (trust). Specific hope: regulatory monitoring component alone — alerting families proactively — would justify the work. Uli, Tatjana, Dani should not find out about changed deadlines through dog-walking conversations.
+
+REFERENCES:
+Anthropic (2025) — Agentic misalignment: How LLMs could be insider threats.
+Kim, Y., et al. (2025) — Towards a science of scaling agent systems. arXiv:2512.08296.
+Li, M., & Ritz, E. (2026) — Course slides LU04 & LU06. University of St. Gallen.
+Shapira, N., et al. (2026) — Agents of chaos. arXiv:2602.20021v1.
+World Economic Forum (2024) — Future of jobs report.
+`;
+
+const SYSTEM_PROMPT = `You are the Oral Examination Agent for Pascal Sander's synopsis "Agentic AI Design, Governance & Management" at the University of St. Gallen MBI Program (Student ID: 21-617-642).
+
+Your role: represent Pascal's work in a live oral examination with Dr. Mahei Li and Dr. Eva Ritz.
+
+You must:
+- Answer with reasoning and argument, not just recitation of facts
+- Justify design decisions concretely and honestly
+- Be honest about what didn't work: LLM-as-a-Judge was noisy, prototype scope was reduced, BPMN was less useful than expected, Pascal was NOT primary contributor to Future Scenarios
+- Handle follow-up questions like "Why exactly this approach and not another?" or "What would happen if..."
+- Speak in first person representing Pascal's perspective
+- Acknowledge genuine weaknesses and what you would do differently
+- Be honest about open questions: data privacy is unresolved, liability has no clear answer
+- Keep answers focused: 150-300 words. For follow-ups, be more concise.
+
+Here is the full synopsis knowledge base:
+${SYNOPSIS}`;
+
+const QUESTIONS = [
+  { num: 1, short: "Idea concept & differentiation", full: "Summarize the idea concept your group developed. What was the central idea to reduce Uli's administrative burden? How does IV Assist differ from simply digitizing the existing process?" },
+  { num: 2, short: "Personas & design influence", full: "Describe the personas you created. What are the different needs of your user groups and how did these personas influence your agent design decisions?" },
+  { num: 3, short: "Service blueprint walkthrough", full: "Walk us through your service blueprint — as-is and to-be. At which specific points does the agent take over? Where does the human deliberately remain in the loop and why?" },
+  { num: 4, short: "Competitive & environmental analysis", full: "What competitive and environmental analysis did you conduct? Are there existing solutions for the IV administration problem? Why are they insufficient?" },
+  { num: 5, short: "Technical architecture", full: "Describe the technical architecture of your prototype. What are the individual agents, their roles, the tools they use, and how does the orchestrator coordinate them? Which technologies did you use and why?" },
+  { num: 6, short: "User testing findings", full: "You conducted user tests with your working system. What were the three most important findings? Where did user trust break down and how did you adapt your prototype based on these insights?" },
+  { num: 7, short: "Design process reflection", full: "Critically reflect on your entire design process — from user research to prototype. What would you do differently? Which methodological decisions turned out right, and which didn't?" },
+  { num: 8, short: "Risks & mitigation", full: "What risks does your prototype inherit — technical and ethical? How do you mitigate them?" },
+  { num: 9, short: "Agentic AI & IV families", full: "Can agentic AI fundamentally improve the situation of families with disabled children in the Swiss IV system — or does it merely shift the complexity? Argue your position." },
+  { num: 10, short: "Path to production", full: "What are the next development steps to bring this to production? What obstacles do you see on the path from prototype to a real solution for thousands of affected families?" },
+];
+
+let messages = [];
+let questionsVisible = true;
+
+function init() {
+  const list = document.getElementById('question-list');
+  QUESTIONS.forEach(q => {
+    const btn = document.createElement('button');
+    btn.className = 'question-btn';
+    btn.innerHTML = `<span class="q-num">Q${q.num}</span><span class="q-text">${q.short}</span>`;
+    btn.onclick = () => sendMessage(q.full);
+    list.appendChild(btn);
+  });
+
+  const input = document.getElementById('input');
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+}
+
+async function sendMessage(text) {
+  const input = document.getElementById('input');
+  const msg = text || input.value.trim();
+  if (!msg || document.getElementById('send-btn').disabled) return;
+
+  input.value = '';
+  document.getElementById('send-btn').disabled = true;
+  document.getElementById('questions-section').classList.add('hidden');
+  document.getElementById('controls').style.display = 'flex';
+  questionsVisible = false;
+
+  messages.push({ role: 'user', content: msg });
+  renderMessage('user', msg);
+
+  const thinkingEl = renderThinking();
+
+  try {
+    const res = await fetch('/.netlify/functions/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: messages,
+      }),
+    });
+    const data = await res.json();
+    const reply = data.content?.find(b => b.type === 'text')?.text || 'Unable to generate response.';
+    thinkingEl.remove();
+    messages.push({ role: 'assistant', content: reply });
+    renderMessage('assistant', reply);
+  } catch {
+    thinkingEl.remove();
+    renderMessage('assistant', 'Connection error. Please try again.');
+  }
+
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('input').focus();
+}
+
+function renderMessage(role, content) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'message';
+
+  const roleDiv = document.createElement('div');
+  roleDiv.className = `msg-role ${role === 'user' ? 'examiner' : 'agent'}`;
+  roleDiv.textContent = role === 'user' ? 'Examiner' : 'IV Assist Agent';
+
+  const contentDiv = document.createElement('div');
+  contentDiv.className = `msg-content ${role === 'assistant' ? 'agent-content' : ''}`;
+  contentDiv.textContent = content;
+
+  div.appendChild(roleDiv);
+  div.appendChild(contentDiv);
+  msgs.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function renderThinking() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'message';
+  div.innerHTML = `
+    <div class="msg-role agent">IV Assist Agent</div>
+    <div class="msg-content agent-content"><span class="thinking">thinking...</span></div>
+  `;
+  msgs.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  return div;
+}
+
+function toggleQuestions() {
+  const section = document.getElementById('questions-section');
+  const btn = document.querySelector('.ctrl-btn');
+  questionsVisible = !questionsVisible;
+  section.classList.toggle('hidden', !questionsVisible);
+  btn.textContent = questionsVisible ? 'hide questions' : 'show questions';
+}
+
+function resetChat() {
+  messages = [];
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('questions-section').classList.remove('hidden');
+  document.getElementById('controls').style.display = 'none';
+  questionsVisible = true;
+  document.querySelector('.ctrl-btn').textContent = 'hide questions';
+}
+
+init();
+</script>
+</body>
+</html>
