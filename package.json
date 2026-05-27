@@ -1,5 +1,7 @@
 {
   "name": "iv-assist-exam-agent",
   "version": "1.0.0",
-  "description": "Oral Examination Agent — IV Assist, Pascal Sander, HSG MBI 2026"
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "express": "^4.18.2" }
 }
