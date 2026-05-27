@@ -417,7 +417,7 @@ async function sendToAgent(userText) {
       }),
     });
     const data = await res.json();
-    const reply = data.content?.find(b => b.type === 'text')?.text || 'I was unable to generate a response.';
+    const reply = data.content?.find(b => b.type === 'text')?.text || 'API ERROR: ' + JSON.stringify(data).substring(0, 300);
     messages.push({ role: 'assistant', content: reply });
     addTurn('agent', reply);
     speak(reply);
