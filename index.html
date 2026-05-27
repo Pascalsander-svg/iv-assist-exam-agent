@@ -410,7 +410,7 @@ async function sendToAgent(userText) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-haiku-20240307',
         max_tokens: 600,
         system: SYSTEM_PROMPT,
         messages,
@@ -535,7 +535,7 @@ async function init() {
     const res = await fetch('/.netlify/functions/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-3-5-sonnet-20241022', max_tokens: 200, system: SYSTEM_PROMPT, messages: openingMsg }),
+      body: JSON.stringify({ model: 'claude-3-haiku-20240307', max_tokens: 200, system: SYSTEM_PROMPT, messages: openingMsg }),
     });
     const data = await res.json();
     const reply = data.content?.find(b => b.type === 'text')?.text || 'Good day. I am here to represent Pascal Sander\'s work on IV Assist. Please proceed with your first question.';
