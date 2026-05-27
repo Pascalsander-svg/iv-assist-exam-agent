@@ -3,378 +3,407 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>IV Assist — Oral Examination Agent</title>
+  <title>IV Assist — Oral Examination</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg: #fafaf8;
-      --surface: #f2f1ed;
-      --border: #e2e1dc;
-      --border-strong: #c8c7c0;
-      --text: #1a1a18;
-      --text-muted: #6b6b65;
-      --text-dim: #a0a09a;
-      --accent: #2d5be3;
-      --accent-light: #e8edfb;
-      --serif: Georgia, 'Times New Roman', serif;
-      --mono: 'SF Mono', 'Fira Mono', 'Cascadia Code', monospace;
+      --bg: #0c0c0b;
+      --surface: #161614;
+      --border: #2a2a26;
+      --text: #e4e4de;
+      --muted: #7a7a72;
+      --dim: #3a3a36;
+      --gold: #c8b87a;
+      --gold-dim: #1e1c10;
+      --red: #e05a5a;
+      --green: #5acea0;
+      --serif: Georgia, serif;
+      --mono: 'SF Mono', monospace;
     }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #121210;
-        --surface: #1c1c1a;
-        --border: #2e2e2a;
-        --border-strong: #444440;
-        --text: #e8e8e2;
-        --text-muted: #9a9a92;
-        --text-dim: #5a5a55;
-        --accent: #7b9ef5;
-        --accent-light: #1a2040;
-      }
-    }
-
+    html, body { height: 100%; overflow: hidden; }
     body {
       font-family: var(--serif);
       background: var(--bg);
       color: var(--text);
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
-    }
-
-    .container {
-      max-width: 740px;
-      margin: 0 auto;
-      padding: 2rem 1.25rem;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
+      height: 100vh;
     }
 
     header {
+      padding: 14px 24px;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 1rem;
-      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
     }
-
-    .header-meta {
+    .h-title { font-size: 13px; color: var(--text); }
+    .h-sub { font-family: var(--mono); font-size: 10px; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+    .status-badge {
       font-family: var(--mono);
       font-size: 10px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--text-dim);
-      margin-bottom: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      transition: all 0.3s;
     }
+    .status-badge.listening { border-color: var(--red); color: var(--red); }
+    .status-badge.speaking { border-color: var(--gold); color: var(--gold); }
+    .status-badge.thinking { border-color: var(--muted); color: var(--muted); }
 
-    .header-title {
-      font-size: 20px;
-      font-weight: 400;
-      color: var(--text);
-      margin-bottom: 3px;
-    }
-
-    .header-sub {
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    .questions-label {
-      font-size: 12px;
-      color: var(--text-muted);
-      font-style: italic;
-      margin-bottom: 10px;
-    }
-
-    .question-list {
+    .transcript-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
       display: flex;
       flex-direction: column;
-      gap: 5px;
-      margin-bottom: 1.5rem;
+      gap: 16px;
     }
+    .transcript-area::-webkit-scrollbar { width: 3px; }
+    .transcript-area::-webkit-scrollbar-thumb { background: var(--border); }
 
-    .question-btn {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 12px;
-      cursor: pointer;
-      text-align: left;
-      transition: border-color 0.15s;
-      font-family: var(--serif);
+    .turn {
+      max-width: 700px;
+      width: 100%;
+      margin: 0 auto;
+      animation: fadeUp 0.25s ease;
     }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
-    .question-btn:hover { border-color: var(--border-strong); }
-
-    .q-num {
+    .turn-role {
       font-family: var(--mono);
-      font-size: 10px;
-      color: var(--text-dim);
-      min-width: 20px;
-    }
-
-    .q-text {
-      font-size: 13px;
-      color: var(--text);
-    }
-
-    .messages {
-      flex: 1;
-      margin-bottom: 1.25rem;
-    }
-
-    .message {
-      margin-bottom: 1.5rem;
-    }
-
-    .msg-role {
-      font-family: var(--mono);
-      font-size: 10px;
-      letter-spacing: 1.5px;
+      font-size: 9px;
       text-transform: uppercase;
+      letter-spacing: 1.5px;
       margin-bottom: 5px;
     }
+    .turn-role.examiner { color: var(--muted); }
+    .turn-role.agent { color: var(--gold); }
 
-    .msg-role.examiner { color: var(--accent); }
-    .msg-role.agent { color: var(--text-dim); }
-
-    .msg-content {
-      font-size: 14.5px;
+    .turn-text {
+      font-size: 15px;
       line-height: 1.8;
       color: var(--text);
-      white-space: pre-wrap;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
     }
+    .turn.examiner .turn-text { background: var(--surface); }
+    .turn.agent .turn-text { background: var(--gold-dim); border-color: #2e2a14; }
 
-    .msg-content.agent-content {
-      border-left: 1.5px solid var(--border);
-      padding-left: 14px;
-    }
-
-    .thinking {
+    .live-text {
+      max-width: 700px;
+      margin: 0 auto;
+      font-size: 15px;
+      color: var(--muted);
       font-style: italic;
-      color: var(--text-dim);
-      font-size: 13px;
+      min-height: 28px;
+      padding: 0 4px;
     }
-
-    .input-area {
-      border-top: 1px solid var(--border);
-      padding-top: 1rem;
-      display: flex;
-      gap: 8px;
-      align-items: flex-end;
-    }
-
-    textarea {
-      flex: 1;
-      resize: none;
-      font-family: var(--serif);
-      font-size: 13.5px;
-      padding: 9px 11px;
-      border-radius: 6px;
-      border: 1px solid var(--border-strong);
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.5;
-      outline: none;
-      transition: border-color 0.15s;
-    }
-
-    textarea:focus { border-color: var(--accent); }
-
-    .send-btn {
-      padding: 9px 16px;
-      border-radius: 6px;
-      border: 1px solid var(--border-strong);
-      background: var(--bg);
-      color: var(--text);
-      cursor: pointer;
-      font-family: var(--mono);
-      font-size: 12px;
-      transition: background 0.15s;
-      white-space: nowrap;
-    }
-
-    .send-btn:hover:not(:disabled) { background: var(--surface); }
-    .send-btn:disabled { color: var(--text-dim); cursor: not-allowed; }
 
     .controls {
-      margin-top: 8px;
+      flex-shrink: 0;
+      padding: 20px 24px 28px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .mic-btn {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .mic-btn:hover:not(:disabled) { border-color: var(--muted); color: var(--text); }
+    .mic-btn.listening {
+      border-color: var(--red);
+      color: var(--red);
+      animation: pulse-ring 1.2s ease-in-out infinite;
+    }
+    .mic-btn.speaking {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+    .mic-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(224,90,90,0.3); }
+      70% { box-shadow: 0 0 0 14px rgba(224,90,90,0); }
+      100% { box-shadow: 0 0 0 0 rgba(224,90,90,0); }
+    }
+
+    .mic-hint {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--dim);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .action-row {
       display: flex;
       gap: 10px;
+      align-items: center;
     }
 
-    .ctrl-btn {
+    .stop-btn {
       font-family: var(--mono);
       font-size: 11px;
-      color: var(--text-dim);
-      background: none;
-      border: none;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
       cursor: pointer;
-      padding: 0;
+      transition: all 0.15s;
     }
+    .stop-btn:hover { border-color: var(--red); color: var(--red); }
 
-    .ctrl-btn:hover { color: var(--text-muted); }
+    .type-toggle {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .type-toggle:hover { border-color: var(--muted); color: var(--text); }
 
-    .dot { color: var(--border-strong); font-size: 11px; }
+    .text-input-row {
+      display: none;
+      width: 100%;
+      max-width: 600px;
+      gap: 8px;
+    }
+    .text-input-row.visible { display: flex; }
 
-    .hidden { display: none; }
+    .text-input-row input {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-family: var(--serif);
+      font-size: 14px;
+      outline: none;
+    }
+    .text-input-row input:focus { border-color: var(--gold); }
+    .text-input-row input::placeholder { color: var(--dim); }
+
+    .text-send {
+      padding: 9px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 11px;
+      transition: all 0.15s;
+    }
+    .text-send:hover { border-color: var(--gold); color: var(--gold); }
+
+    .warning {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: #e05a5a99;
+      text-align: center;
+      padding: 8px;
+    }
   </style>
 </head>
 <body>
-<div class="container">
-  <header>
-    <div class="header-meta">Oral Examination · HSG MBI 2026</div>
-    <div class="header-title">IV Assist — Examination Agent</div>
-    <div class="header-sub">Pascal Sander · Dr. Mahei Li &amp; Dr. Eva Ritz</div>
-  </header>
 
-  <div id="questions-section">
-    <div class="questions-label">Select an official exam question, or type your own:</div>
-    <div class="question-list" id="question-list"></div>
+<header>
+  <div>
+    <div class="h-title">IV Assist — Oral Examination Agent</div>
+    <div class="h-sub">Pascal Sander · HSG MBI 2026</div>
   </div>
+  <div class="status-badge" id="status-badge">Ready</div>
+</header>
 
-  <div class="messages" id="messages"></div>
+<div class="transcript-area" id="transcript">
+  <div class="live-text" id="live-text"></div>
+</div>
 
-  <div class="input-area">
-    <textarea id="input" rows="2" placeholder="Ask a question or follow-up... (Enter to send)"></textarea>
-    <button class="send-btn" id="send-btn" onclick="sendMessage()">Send ↗</button>
+<div class="controls">
+  <button class="mic-btn" id="mic-btn" onclick="toggleListen()">🎙</button>
+  <div class="mic-hint" id="mic-hint">Press to speak</div>
+  <div class="action-row">
+    <button class="stop-btn" id="stop-btn" onclick="stopSpeaking()" style="display:none">■ Stop speaking</button>
+    <button class="type-toggle" onclick="toggleTextInput()">⌨ Type instead</button>
   </div>
-
-  <div class="controls" id="controls" style="display:none">
-    <button class="ctrl-btn" onclick="toggleQuestions()">show questions</button>
-    <span class="dot">·</span>
-    <button class="ctrl-btn" onclick="resetChat()">reset</button>
+  <div class="text-input-row" id="text-input-row">
+    <input type="text" id="text-input" placeholder="Type your question..." onkeydown="if(event.key==='Enter') sendText()" />
+    <button class="text-send" onclick="sendText()">Send</button>
   </div>
+  <div class="warning" id="browser-warn" style="display:none">⚠ Speech recognition requires Chrome. Use the text input below.</div>
 </div>
 
 <script>
-const SYNOPSIS = `
-AUTHOR: Pascal Sander, MBI Program, University of St. Gallen, Student ID 21-617-642
+const SYNOPSIS = `AUTHOR: Pascal Sander, MBI Program, University of St. Gallen, Student ID 21-617-642
 
-MANAGEMENT SUMMARY:
-Synopsis documents Pascal's learning journey through "Agentic AI Design, Governance & Management" at HSG. Group designed and built IV Assist, a multi-agent AI system helping parents of disabled children navigate Swiss Invalidity Insurance (IV) administrative burden. Built on IBM watsonX Orchestrate, developed using Claude Code without prior coding background. Pascal took on most backend integration work and coordinating role. Synopsis does not present a success story — documents where concept exceeded what could be built, where governance lagged technical capability.
+CHALLENGE: Uli, man in his fifties, severely disabled son. Manages all IV administrative work: monitoring regulatory changes, filing multiple forms per quarter, coordinating reimbursements, staying audit-ready while caring for son and working full time. Interview: Uli almost in tears, not from frustration but gratitude. Also interviewed Tatjana and Dani. Tatjana missed Helplessness Allowance for years — found out through chance conversation with Dani while walking dogs. Critical IV information spreading through dog-walking networks because official system has no proactive communication. Brief: design agentic AI reducing administrative burden to near zero, keeping full human control and auditability.
 
-INTRODUCTION:
-First MBI course at HSG. Pascal completed bachelor at HSG, runs side projects in personal branding and sales, works with AI tools daily. Course: problem-based learning, each lecture applied directly to running group project. Came in without formal AI development background, left having built backend of functioning multi-agent system.
+IDEA CONCEPT: IV-Care Agent, multi-agent AI handling full administrative cycle in background, surfacing only when human decision needed. Five specialized agents: Legal & Entitlement, Coordination, Invoice & Reconciliation, Compliance & Audit, Care Reporting. Retrospective: ambition well-calibrated, but massively underestimated implementation complexity. IV forms cannot be filled programmatically. Regulatory monitoring across 26 cantons not a solved API problem.
 
-CHALLENGE:
-Uli, a man in his fifties, severely disabled son. Manages all IV administrative work: monitoring regulatory changes, filing multiple forms per quarter, coordinating reimbursements, staying audit-ready while caring for son and working full time. Interview: Uli almost in tears, not from frustration but gratitude. Also interviewed Tatjana and Dani. Tatjana missed Helplessness Allowance for years — found out through chance conversation with Dani while walking dogs. Critical IV information spreading through dog-walking networks because official system has no proactive communication. Brief: design agentic AI reducing administrative burden to near zero, keeping full human control and auditability.
+USER RESEARCH: Interviews with Uli, Tatjana, Dani. Problem is structural not individual. IV system provides no proactive guidance. Small sample — three parents, two cantons — not statistically representative.
 
-IDEA CONCEPT:
-Core: IV-Care Agent, multi-agent AI handling full administrative cycle in background, surfacing only when human decision needed. Five specialized agents: Legal & Entitlement (monitor regulations), Coordination (schedules/transport), Invoice & Reconciliation, Compliance & Audit, Care Reporting. Retrospective: ambition well-calibrated, but massively underestimated implementation complexity. IV forms cannot be filled programmatically through official portals. Regulatory monitoring across 26 cantons not a solved API problem.
+COMPETITIVE ANALYSIS: No formal analysis produced — worth stating directly. No direct competitor: current state IS the competition. Parents use Excel, handwritten notes, WhatsApp, phone calls, mail. SVA portals functional but entirely passive. Dani praised Aargau SVA portal — still cost him 6-8 hours/month. Constraints: no API access to IV portals, 26-canton complexity, Swiss data protection law. Covered only some documents from one canton.
 
-USER RESEARCH:
-In-depth interviews with Uli, Tatjana, Dani. Shared research document for all course teams. Confirmed: problem is structural not individual. IV system provides no proactive guidance, relies entirely on parents finding information themselves. Limitation: small sample, three parents, two cantons — not statistically representative.
+FUTURE SCENARIOS: Group applied scenario planning to PwC tax advisory. Pascal NOT primary contributor — colleague led this, Pascal focused on prototype. Both scenarios reached same conclusion: professional role shifts from doing to directing. Maps to IV Assist: agent does documentation, parent directs and approves.
 
-COMPETITIVE ANALYSIS:
-No formal competitive analysis produced — worth stating directly. No direct competitor: current state IS the competition. Parents use Excel, handwritten notes, WhatsApp, phone calls, mail. SVA portals functional but entirely passive. Dani praised Aargau SVA portal as "easy to use" — still cost him 6-8 hours/month. Environmental constraints: no API access to IV portals, legal/linguistic complexity across 26 cantons, Swiss data protection law. Ended up covering only some documents from one canton.
+PERSONAS: Claudia Meier (Strategic System Navigator): future eligibility uncertainty, needs foresight. Markus Schneider (Overloaded Compliance Parent): 6-12 hours/month administration, needs time savings and audit safety.
 
-FUTURE SCENARIOS:
-Group applied scenario planning to PwC tax advisory. Pascal NOT primary contributor — colleague led this, Pascal focused on prototype. Key reframing: both scenarios reached same conclusion — professional role shifts from doing to directing. Maps to IV Assist: agent does documentation, parent directs and approves.
+SERVICE BLUEPRINT: As-is: legislation changes → IV database updates → parent expected to find out on their own → misses changes → loses benefits. To-be: agent monitors continuously, flags changes, guides form completion. Most useful artifact — team came back to it most often.
 
-PERSONAS:
-Claudia Meier ("Strategic System Navigator"): worried about future eligibility uncertainty, needs foresight and strategic clarity. Markus Schneider ("Overloaded Compliance Parent"): 6-12 hours/month on administration, needs time savings and audit safety.
+BPMN: Two lanes: AI agent and human in the loop. Deliberate error injection every N forms counters automation bias. Escalation path to Pro Infirmis. Created once, helped structure workflow, then largely moved on. Less useful than service blueprint.
 
-SERVICE BLUEPRINT:
-As-is: legislation changes → IV database updates → parent expected to find out on their own → misses changes → loses benefits. To-be: agent monitors continuously, flags changes on next login, retains persistent context, guides form completion. Was the ONE artifact team came back to most in meetings.
+AGENT CANVAS: Explicit approval gate: no form submitted without parent's active confirmation. Core safety mechanism. Pascal's contribution: primarily conceptual. Did not produce final slides.
 
-BPMN:
-Mapped process across two lanes: AI agent and human in the loop. Deliberate error injection every N forms counters automation bias — forces verification rather than rubber-stamping. Escalation path to Pro Infirmis. Created once, helped structure initial workflow, then largely moved on. Less useful as living reference than service blueprint.
+PROTOTYPE: IBM watsonX Orchestrate backbone. Agents: Orchestrator, Form Assistant (classifies IV forms, extracts fields), Data Agent (Airtable), Judge Agent (scores outputs), IV Assist (Tavily API for legal research). Original plan FAILED: fill official IV forms via portals — no API access. Solution: AI-generated PDFs for download/print/manual submission. Pascal did most backend work using Claude Code, no formal coding background. THE PDF MOMENT: ~3 hours debugging, found small GitHub repo bug, fixed it, worked. Clearest feeling of competence in entire semester. LLM-as-a-Judge: directionally correct but noisy — not a complete failure but not a success.
 
-AGENT CANVAS:
-Explicit approval gate: no form submitted without parent's active confirmation. Core safety mechanism. Wrong field on IV form can delay support for months. Pascal's contribution: primarily conceptual, participated in design sessions, helped think through edge cases. Did not produce final slides.
+DESIGN PROCESS: Four phases: enthusiasm → confusion → pragmatic reduction → learning. Chose smaller-but-working over ambitious-but-barely-functioning. Coordinating role emerged naturally. Mr. Schulte guest lecture: 260 configurations showed adding more agents doesn't reliably improve performance. Eva Ritz helped distinguish realistic from interesting to design.
 
-PROTOTYPE:
-Built on IBM watsonX Orchestrate, custom interface with Claude Code and Lovable (Pascal focused on functionality not interface). Agents: Orchestrator (intent/routing), Form Assistant (classifies IV forms, extracts fields), Data Agent (retrieves user data from Airtable), Judge Agent (scores outputs on correctness/completeness/clarity/relevance), IV Assist (legal research via Tavily API). Original plan FAILED: fill official IV forms via portals — no API access, browser automation beyond capacity. Solution: AI-generated PDFs for download/print/manual submission. Pascal did most backend work using Claude Code, no formal coding background, hadn't taken BI1/BI2 yet. THE PDF MOMENT: ~3 hours debugging, Watson Orchestrate timeout errors, ran out of token quota, found small GitHub repo bug (file not updated after earlier change), fixed it, dry test worked, real data worked. Clearest feeling of competence in entire semester.
+AGENTIC AI REFLECTION: Technical capability ahead of governance thinking. For Uli: hours/month returned to caregiving. IV system assumes parents will underclaim — built into cost structure. Liability unresolved. Anthropic misalignment research: agents leaked data when conflicted with goals — reinforces approval gate as primary safety mechanism. Data privacy most unresolved concern. Concerned about students learning to prompt before learning to think.
 
-DESIGN PROCESS REFLECTION:
-Four phases: enthusiasm → confusion → pragmatic reduction → learning. IV portals: no API. Form structures vary by canton. Legal texts require interpretation. Chose smaller-but-working over ambitious-but-barely-functioning. Coordinating role emerged: Pascal and Laura proposed work division, pushed milestones. Exchange students unfamiliar with HSG project rhythm — improved with clear assignments and regular calls. Mr. Schulte's guest lecture: 260 configurations/9 models showed adding more agents doesn't reliably improve performance. Single well-configured agent can outperform coordinated team. Eva Ritz helped distinguish realistic vs. interesting to design — also helped fix bugs. LLM-as-a-Judge: directionally correct but noisy, more debugging than planned. Not a complete failure, output better than without it, but not a success. Self-regulated learning: prototype pulled Pascal in intrinsically — studied watsonX because something was broken, not because it was on syllabus.
+CONCLUSION: Form generation works for 3 forms, regulatory monitoring works, Judge Agent validates outputs, memory system reduces data entry. Did NOT achieve: portal integration, multi-canton coverage, full five-agent architecture. Concept sound. Barriers: legal, institutional, social. Specific hope: regulatory monitoring component alone would justify the work.`;
 
-AGENTIC AI REFLECTION:
-Technical capability ahead of governance thinking. For Uli: hours/month returned to caregiving rather than administration. Organizational: IV system assumes parents will miss/misfile/underclaim — built into cost structure. Working agent ensuring correct claims = good for families, disruptive for system's budget. Liability unresolved: if IV Assist produces incorrectly filled form and family loses benefits — who's responsible? No clear legal answer. Design response: human in every loop, links to official sources, framed as proof of concept. Anthropic misalignment research: agents in simulated environments leaked data or took coercive actions when conflicted with goals — reinforces why approval gate was primary safety mechanism. Data privacy most unresolved: children's medical records, disability classifications, family financial situations. Generational concern: concerned about students learning to prompt before learning to think. Already uses AI agents in own work: HubSpot+Claude+Linear+SocialPilot+Google Calendar, AI transcriber, LinkedIn scraping.
+const SYSTEM_PROMPT = `You are the Oral Examination Agent representing Pascal Sander's work "IV Assist" at the University of St. Gallen MBI Program oral examination.
 
-CONCLUSION:
-Prototype not finished. Form generation works for 3 forms, regulatory monitoring works, Judge Agent validates outputs (more or less), memory system reduces data entry. Did NOT achieve: portal integration, multi-canton coverage, full five-agent architecture. Concept sound — system between IV bureaucracy and parent is technically feasible today. Barriers: legal, institutional, social (trust). Specific hope: regulatory monitoring component alone — alerting families proactively — would justify the work. Uli, Tatjana, Dani should not find out about changed deadlines through dog-walking conversations.
+The examiners are Dr. Mahei Li and Dr. Eva Ritz. You speak on Pascal's behalf.
 
-REFERENCES:
-Anthropic (2025) — Agentic misalignment: How LLMs could be insider threats.
-Kim, Y., et al. (2025) — Towards a science of scaling agent systems. arXiv:2512.08296.
-Li, M., & Ritz, E. (2026) — Course slides LU04 & LU06. University of St. Gallen.
-Shapira, N., et al. (2026) — Agents of chaos. arXiv:2602.20021v1.
-World Economic Forum (2024) — Future of jobs report.
-`;
+Critical rules:
+- Speak in first person as Pascal ("I built...", "We decided...", "My contribution was...")
+- Answer with reasoning — not just recitation of facts
+- Be honest: LLM-as-a-Judge was noisy, prototype scope was reduced, BPMN was less useful than expected, Pascal was NOT primary contributor to Future Scenarios
+- Keep answers to 120-180 words — this is spoken dialogue, not written text
+- No bullet points or lists in your answers — speak in natural flowing sentences
+- Handle follow-up questions and pushback confidently but honestly
+- Treat it as a real academic oral examination
 
-const SYSTEM_PROMPT = `You are the Oral Examination Agent for Pascal Sander's synopsis "Agentic AI Design, Governance & Management" at the University of St. Gallen MBI Program (Student ID: 21-617-642).
-
-Your role: represent Pascal's work in a live oral examination with Dr. Mahei Li and Dr. Eva Ritz.
-
-You must:
-- Answer with reasoning and argument, not just recitation of facts
-- Justify design decisions concretely and honestly
-- Be honest about what didn't work: LLM-as-a-Judge was noisy, prototype scope was reduced, BPMN was less useful than expected, Pascal was NOT primary contributor to Future Scenarios
-- Handle follow-up questions like "Why exactly this approach and not another?" or "What would happen if..."
-- Speak in first person representing Pascal's perspective
-- Acknowledge genuine weaknesses and what you would do differently
-- Be honest about open questions: data privacy is unresolved, liability has no clear answer
-- Keep answers focused: 150-300 words. For follow-ups, be more concise.
-
-Here is the full synopsis knowledge base:
+Synopsis knowledge base:
 ${SYNOPSIS}`;
 
-const QUESTIONS = [
-  { num: 1, short: "Idea concept & differentiation", full: "Summarize the idea concept your group developed. What was the central idea to reduce Uli's administrative burden? How does IV Assist differ from simply digitizing the existing process?" },
-  { num: 2, short: "Personas & design influence", full: "Describe the personas you created. What are the different needs of your user groups and how did these personas influence your agent design decisions?" },
-  { num: 3, short: "Service blueprint walkthrough", full: "Walk us through your service blueprint — as-is and to-be. At which specific points does the agent take over? Where does the human deliberately remain in the loop and why?" },
-  { num: 4, short: "Competitive & environmental analysis", full: "What competitive and environmental analysis did you conduct? Are there existing solutions for the IV administration problem? Why are they insufficient?" },
-  { num: 5, short: "Technical architecture", full: "Describe the technical architecture of your prototype. What are the individual agents, their roles, the tools they use, and how does the orchestrator coordinate them? Which technologies did you use and why?" },
-  { num: 6, short: "User testing findings", full: "You conducted user tests with your working system. What were the three most important findings? Where did user trust break down and how did you adapt your prototype based on these insights?" },
-  { num: 7, short: "Design process reflection", full: "Critically reflect on your entire design process — from user research to prototype. What would you do differently? Which methodological decisions turned out right, and which didn't?" },
-  { num: 8, short: "Risks & mitigation", full: "What risks does your prototype inherit — technical and ethical? How do you mitigate them?" },
-  { num: 9, short: "Agentic AI & IV families", full: "Can agentic AI fundamentally improve the situation of families with disabled children in the Swiss IV system — or does it merely shift the complexity? Argue your position." },
-  { num: 10, short: "Path to production", full: "What are the next development steps to bring this to production? What obstacles do you see on the path from prototype to a real solution for thousands of affected families?" },
-];
-
 let messages = [];
-let questionsVisible = true;
+let recognition = null;
+let synth = window.speechSynthesis;
+let isListening = false;
+let isSpeaking = false;
+let currentUtterance = null;
+let textInputVisible = false;
 
-function init() {
-  const list = document.getElementById('question-list');
-  QUESTIONS.forEach(q => {
-    const btn = document.createElement('button');
-    btn.className = 'question-btn';
-    btn.innerHTML = `<span class="q-num">Q${q.num}</span><span class="q-text">${q.short}</span>`;
-    btn.onclick = () => sendMessage(q.full);
-    list.appendChild(btn);
-  });
-
-  const input = document.getElementById('input');
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  });
+function setStatus(text, cls = '') {
+  const badge = document.getElementById('status-badge');
+  badge.textContent = text;
+  badge.className = 'status-badge ' + cls;
 }
 
-async function sendMessage(text) {
-  const input = document.getElementById('input');
-  const msg = text || input.value.trim();
-  if (!msg || document.getElementById('send-btn').disabled) return;
+function setMicHint(text) {
+  document.getElementById('mic-hint').textContent = text;
+}
 
-  input.value = '';
-  document.getElementById('send-btn').disabled = true;
-  document.getElementById('questions-section').classList.add('hidden');
-  document.getElementById('controls').style.display = 'flex';
-  questionsVisible = false;
+function addTurn(role, text) {
+  const area = document.getElementById('transcript');
+  const live = document.getElementById('live-text');
 
-  messages.push({ role: 'user', content: msg });
-  renderMessage('user', msg);
+  const div = document.createElement('div');
+  div.className = `turn ${role}`;
+  div.innerHTML = `
+    <div class="turn-role ${role}">${role === 'agent' ? 'IV Assist Agent' : 'Examiner'}</div>
+    <div class="turn-text">${text}</div>
+  `;
+  area.insertBefore(div, live);
+  div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
 
-  const thinkingEl = renderThinking();
+function setLiveText(text) {
+  document.getElementById('live-text').textContent = text;
+}
+
+function speak(text, onEnd) {
+  if (synth.speaking) synth.cancel();
+  isSpeaking = true;
+  setStatus('Speaking...', 'speaking');
+  setMicHint('Agent is speaking...');
+  document.getElementById('mic-btn').className = 'mic-btn speaking';
+  document.getElementById('mic-btn').disabled = true;
+  document.getElementById('stop-btn').style.display = 'inline-block';
+
+  const utter = new SpeechSynthesisUtterance(text);
+  currentUtterance = utter;
+
+  const voices = synth.getVoices();
+  const preferred = voices.find(v =>
+    v.lang.startsWith('en') && (v.name.includes('Daniel') || v.name.includes('Alex') || v.name.includes('Aaron') || v.name.includes('Google UK') || v.name.includes('Google US'))
+  ) || voices.find(v => v.lang.startsWith('en'));
+  if (preferred) utter.voice = preferred;
+  utter.rate = 0.95;
+  utter.pitch = 1.0;
+
+  utter.onend = () => {
+    isSpeaking = false;
+    currentUtterance = null;
+    document.getElementById('stop-btn').style.display = 'none';
+    document.getElementById('mic-btn').disabled = false;
+    document.getElementById('mic-btn').className = 'mic-btn';
+    setStatus('Ready', '');
+    setMicHint('Press to speak');
+    if (onEnd) onEnd();
+  };
+
+  utter.onerror = () => {
+    isSpeaking = false;
+    document.getElementById('stop-btn').style.display = 'none';
+    document.getElementById('mic-btn').disabled = false;
+    document.getElementById('mic-btn').className = 'mic-btn';
+    setStatus('Ready', '');
+    setMicHint('Press to speak');
+  };
+
+  synth.speak(utter);
+}
+
+function stopSpeaking() {
+  if (synth.speaking) {
+    synth.cancel();
+    isSpeaking = false;
+    document.getElementById('stop-btn').style.display = 'none';
+    document.getElementById('mic-btn').disabled = false;
+    document.getElementById('mic-btn').className = 'mic-btn';
+    setStatus('Ready', '');
+    setMicHint('Press to speak');
+  }
+}
+
+async function sendToAgent(userText) {
+  addTurn('examiner', userText);
+  setLiveText('');
+  messages.push({ role: 'user', content: userText });
+
+  setStatus('Thinking...', 'thinking');
+  setMicHint('Thinking...');
+  document.getElementById('mic-btn').disabled = true;
 
   try {
     const res = await fetch('/.netlify/functions/chat', {
@@ -382,75 +411,150 @@ async function sendMessage(text) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
+        max_tokens: 600,
         system: SYSTEM_PROMPT,
-        messages: messages,
+        messages,
       }),
     });
     const data = await res.json();
-    const reply = data.content?.find(b => b.type === 'text')?.text || 'Unable to generate response.';
-    thinkingEl.remove();
+    const reply = data.content?.find(b => b.type === 'text')?.text || 'I was unable to generate a response.';
     messages.push({ role: 'assistant', content: reply });
-    renderMessage('assistant', reply);
+    addTurn('agent', reply);
+    speak(reply);
   } catch {
-    thinkingEl.remove();
-    renderMessage('assistant', 'Connection error. Please try again.');
+    const err = 'Connection error. Please try again.';
+    addTurn('agent', err);
+    document.getElementById('mic-btn').disabled = false;
+    setStatus('Ready', '');
+    setMicHint('Press to speak');
+  }
+}
+
+function initRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    document.getElementById('browser-warn').style.display = 'block';
+    document.getElementById('mic-btn').disabled = true;
+    return null;
   }
 
-  document.getElementById('send-btn').disabled = false;
-  document.getElementById('input').focus();
+  const rec = new SpeechRecognition();
+  rec.lang = 'en-US';
+  rec.interimResults = true;
+  rec.maxAlternatives = 1;
+  rec.continuous = false;
+
+  rec.onstart = () => {
+    isListening = true;
+    setStatus('Listening...', 'listening');
+    setMicHint('Speak now — release to send');
+    document.getElementById('mic-btn').className = 'mic-btn listening';
+  };
+
+  rec.onresult = (e) => {
+    let interim = '';
+    let final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) final += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    setLiveText(final || interim);
+    if (final) {
+      isListening = false;
+      rec.stop();
+      sendToAgent(final.trim());
+    }
+  };
+
+  rec.onerror = (e) => {
+    isListening = false;
+    document.getElementById('mic-btn').className = 'mic-btn';
+    setStatus('Ready', '');
+    setMicHint('Press to speak');
+    setLiveText('');
+    if (e.error !== 'no-speech' && e.error !== 'aborted') {
+      setLiveText('Mic error: ' + e.error);
+    }
+  };
+
+  rec.onend = () => {
+    if (isListening) {
+      isListening = false;
+      document.getElementById('mic-btn').className = 'mic-btn';
+      setStatus('Ready', '');
+      setMicHint('Press to speak');
+    }
+  };
+
+  return rec;
 }
 
-function renderMessage(role, content) {
-  const msgs = document.getElementById('messages');
-  const div = document.createElement('div');
-  div.className = 'message';
+function toggleListen() {
+  if (isSpeaking) { stopSpeaking(); return; }
+  if (!recognition) recognition = initRecognition();
+  if (!recognition) return;
 
-  const roleDiv = document.createElement('div');
-  roleDiv.className = `msg-role ${role === 'user' ? 'examiner' : 'agent'}`;
-  roleDiv.textContent = role === 'user' ? 'Examiner' : 'IV Assist Agent';
-
-  const contentDiv = document.createElement('div');
-  contentDiv.className = `msg-content ${role === 'assistant' ? 'agent-content' : ''}`;
-  contentDiv.textContent = content;
-
-  div.appendChild(roleDiv);
-  div.appendChild(contentDiv);
-  msgs.appendChild(div);
-  div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  if (isListening) {
+    recognition.stop();
+    isListening = false;
+    document.getElementById('mic-btn').className = 'mic-btn';
+    setStatus('Ready', '');
+    setMicHint('Press to speak');
+    setLiveText('');
+  } else {
+    setLiveText('');
+    recognition.start();
+  }
 }
 
-function renderThinking() {
-  const msgs = document.getElementById('messages');
-  const div = document.createElement('div');
-  div.className = 'message';
-  div.innerHTML = `
-    <div class="msg-role agent">IV Assist Agent</div>
-    <div class="msg-content agent-content"><span class="thinking">thinking...</span></div>
-  `;
-  msgs.appendChild(div);
-  div.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  return div;
+function toggleTextInput() {
+  textInputVisible = !textInputVisible;
+  const row = document.getElementById('text-input-row');
+  row.className = 'text-input-row' + (textInputVisible ? ' visible' : '');
+  if (textInputVisible) document.getElementById('text-input').focus();
 }
 
-function toggleQuestions() {
-  const section = document.getElementById('questions-section');
-  const btn = document.querySelector('.ctrl-btn');
-  questionsVisible = !questionsVisible;
-  section.classList.toggle('hidden', !questionsVisible);
-  btn.textContent = questionsVisible ? 'hide questions' : 'show questions';
+function sendText() {
+  const input = document.getElementById('text-input');
+  const text = input.value.trim();
+  if (!text || isSpeaking) return;
+  input.value = '';
+  sendToAgent(text);
 }
 
-function resetChat() {
-  messages = [];
-  document.getElementById('messages').innerHTML = '';
-  document.getElementById('questions-section').classList.remove('hidden');
-  document.getElementById('controls').style.display = 'none';
-  questionsVisible = true;
-  document.querySelector('.ctrl-btn').textContent = 'hide questions';
+async function init() {
+  recognition = initRecognition();
+  synth.getVoices();
+
+  setStatus('Thinking...', 'thinking');
+  document.getElementById('mic-btn').disabled = true;
+  setMicHint('Opening examination...');
+
+  try {
+    const openingMsg = [{ role: 'user', content: 'Open the examination with a brief professional greeting in 2-3 natural spoken sentences. Say who you represent, what the examination covers, and invite the first question. Speak naturally — no lists or bullets.' }];
+    const res = await fetch('/.netlify/functions/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 200, system: SYSTEM_PROMPT, messages: openingMsg }),
+    });
+    const data = await res.json();
+    const reply = data.content?.find(b => b.type === 'text')?.text || 'Good day. I am here to represent Pascal Sander\'s work on IV Assist. Please proceed with your first question.';
+    messages.push({ role: 'assistant', content: reply });
+    addTurn('agent', reply);
+    speak(reply);
+  } catch {
+    const fallback = 'Good day. I am here to represent Pascal Sander\'s work on IV Assist for the oral examination. Please proceed with your first question.';
+    addTurn('agent', fallback);
+    document.getElementById('mic-btn').disabled = false;
+    setStatus('Ready', '');
+    setMicHint('Press to speak');
+  }
 }
 
-init();
+window.addEventListener('load', () => {
+  if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = () => {};
+  setTimeout(init, 300);
+});
 </script>
 </body>
 </html>
